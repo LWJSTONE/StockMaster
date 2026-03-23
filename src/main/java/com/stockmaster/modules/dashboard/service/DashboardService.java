@@ -1,8 +1,6 @@
 package com.stockmaster.modules.dashboard.service;
 
-import com.stockmaster.modules.dashboard.dto.ChartData;
-import com.stockmaster.modules.dashboard.dto.DashboardStats;
-import com.stockmaster.modules.dashboard.dto.TrendData;
+import com.stockmaster.modules.dashboard.dto.*;
 
 import java.util.List;
 
@@ -15,4 +13,24 @@ public interface DashboardService {
     List<ChartData> getCategoryDistribution();
 
     List<ChartData> getPurchaseVsStock();
+
+    /**
+     * Get sales summary (monthly inbound/outbound statistics)
+     */
+    SalesSummary getSalesSummary();
+
+    /**
+     * Get inventory summary
+     */
+    InventorySummary getInventorySummary();
+
+    /**
+     * Get purchase summary
+     */
+    PurchaseSummary getPurchaseSummary();
+
+    /**
+     * Get alert list (low stock and overstock items)
+     */
+    List<AlertItem> getAlertList();
 }
