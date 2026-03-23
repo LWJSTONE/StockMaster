@@ -13,6 +13,8 @@ public interface ProductService {
 
     ProductVO getByCode(String productCode);
 
+    ProductVO getByBarcode(String barcode);
+
     ProductVO create(ProductDTO productDTO);
 
     ProductVO update(Long id, ProductDTO productDTO);
@@ -30,4 +32,6 @@ public interface ProductService {
     List<ProductVO> getLowStockProducts();
 
     List<ProductVO> getActiveProducts();
+
+    List<ProductVO> getProductsForSelect(String keyword, Long categoryId);
 }

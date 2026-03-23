@@ -5,14 +5,18 @@ import com.stockmaster.common.dto.ApiResponse;
 import com.stockmaster.common.dto.PageResult;
 import com.stockmaster.common.enums.OperationType;
 import com.stockmaster.common.enums.StockStatus;
+import com.stockmaster.common.service.FileUploadService;
 import com.stockmaster.modules.stock.dto.ProductDTO;
 import com.stockmaster.modules.stock.dto.ProductVO;
 import com.stockmaster.modules.stock.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/stock/products")
@@ -20,6 +24,7 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+    private final FileUploadService fileUploadService;
 
     @GetMapping
     @LogOperation(value = OperationType.QUERY, module = "商品管理", description = "查询商品列表")
@@ -44,6 +49,13 @@ public class ProductController {
     @LogOperation(value = OperationType.QUERY, module = "商品管理", description = "根据编码查询商品")
     public ApiResponse<ProductVO> getByCode(@PathVariable String code) {
         ProductVO product = productService.getByCode(code);
+        return ApiResponse.success(product);
+    }
+
+    @GetMapping("/barcode/{barcode}")
+    @LogOperation(value = OperationType.QUERY, module = "商品管理", description = "根据条码查询商品")
+    public ApiResponse<ProductVO> getByBarcode(@PathVariable String barcode) {
+        ProductVO product = productService.getByBarcode(barcode);
         return ApiResponse.success(product);
     }
 
@@ -76,17 +88,20 @@ public class ProductController {
     }
 
     @PutMapping("/{id}/status")
-    @LogOperation(value = OperationType.UPDATE, module = "商品管理", description = "修改商品状态")
+    @LogOperation(value = OperationType.UPDATE, module = "商品管理", description = "修改商品状态(上下架)")
     public ApiResponse<Void> updateStatus(@PathVariable Long id, @RequestParam StockStatus status) {
         productService.updateStatus(id, status);
         return ApiResponse.success();
     }
 
-    @PutMapping("/{id}/image")
+    @PostMapping("/{id}/image")
     @LogOperation(value = OperationType.UPDATE, module = "商品管理", description = "上传商品图片")
-    public ApiResponse<Void> uploadImage(@PathVariable Long id, @RequestParam String imageUrl) {
+    public ApiResponse<Map<String, String>> uploadImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        String imageUrl = fileUploadService.uploadProductImage(file);
         productService.uploadImage(id, imageUrl);
-        return ApiResponse.success();
+        Map<String, String> result = new HashMap<>();
+        result.put("url", imageUrl);
+        return ApiResponse.success(result);
     }
 
     @GetMapping("/low-stock")
@@ -99,6 +114,14 @@ public class ProductController {
     @GetMapping("/active")
     public ApiResponse<List<ProductVO>> getActiveProducts() {
         List<ProductVO> products = productService.getActiveProducts();
+        return ApiResponse.success(products);
+    }
+
+    @GetMapping("/select")
+    public ApiResponse<List<ProductVO>> getProductsForSelect(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long categoryId) {
+        List<ProductVO> products = productService.getProductsForSelect(keyword, categoryId);
         return ApiResponse.success(products);
     }
 }

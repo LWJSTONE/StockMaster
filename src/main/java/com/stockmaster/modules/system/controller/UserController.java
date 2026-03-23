@@ -4,17 +4,18 @@ import com.stockmaster.common.aop.LogOperation;
 import com.stockmaster.common.dto.ApiResponse;
 import com.stockmaster.common.dto.PageResult;
 import com.stockmaster.common.enums.OperationType;
-import com.stockmaster.common.security.SecurityUtils;
+import com.stockmaster.common.service.FileUploadService;
 import com.stockmaster.modules.system.dto.*;
 import com.stockmaster.modules.system.entity.User;
 import com.stockmaster.modules.system.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/system/users")
@@ -22,6 +23,7 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final FileUploadService fileUploadService;
 
     @GetMapping
     @LogOperation(value = OperationType.QUERY, module = "用户管理", description = "查询用户列表")
@@ -82,13 +84,14 @@ public class UserController {
         return ApiResponse.success();
     }
 
-    @PutMapping("/{id}/avatar")
+    @PostMapping("/{id}/avatar")
     @LogOperation(value = OperationType.UPDATE, module = "用户管理", description = "上传头像")
-    public ApiResponse<Void> uploadAvatar(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
-        // 这里简化处理，实际应该保存文件并返回URL
-        String avatarUrl = "/uploads/avatars/" + file.getOriginalFilename();
+    public ApiResponse<Map<String, String>> uploadAvatar(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        String avatarUrl = fileUploadService.uploadAvatar(file);
         userService.updateAvatar(id, avatarUrl);
-        return ApiResponse.success();
+        Map<String, String> result = new HashMap<>();
+        result.put("url", avatarUrl);
+        return ApiResponse.success(result);
     }
 
     @PutMapping("/{id}/roles")

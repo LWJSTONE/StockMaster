@@ -5,7 +5,6 @@ import com.stockmaster.common.enums.StockStatus;
 import com.stockmaster.common.exception.BusinessException;
 import com.stockmaster.modules.stock.dto.ProductDTO;
 import com.stockmaster.modules.stock.dto.ProductVO;
-import com.stockmaster.modules.stock.entity.Category;
 import com.stockmaster.modules.stock.entity.Inventory;
 import com.stockmaster.modules.stock.entity.Product;
 import com.stockmaster.modules.stock.repository.CategoryRepository;
@@ -41,6 +40,13 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductVO getByCode(String productCode) {
         Product product = productRepository.findByProductCode(productCode)
+                .orElseThrow(() -> new BusinessException("商品不存在"));
+        return convertToVO(product);
+    }
+
+    @Override
+    public ProductVO getByBarcode(String barcode) {
+        Product product = productRepository.findByBarcode(barcode)
                 .orElseThrow(() -> new BusinessException("商品不存在"));
         return convertToVO(product);
     }
@@ -166,6 +172,21 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<ProductVO> getActiveProducts() {
         List<Product> products = productRepository.findByStatus(StockStatus.ACTIVE);
+        return products.stream().map(this::convertToVO).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ProductVO> getProductsForSelect(String keyword, Long categoryId) {
+        List<Product> products;
+        if (keyword != null && !keyword.isEmpty()) {
+            Pageable pageable = PageRequest.of(0, 20);
+            products = productRepository.findByConditions(keyword, categoryId, StockStatus.ACTIVE, pageable).getContent();
+        } else {
+            products = productRepository.findByStatus(StockStatus.ACTIVE);
+            if (products.size() > 50) {
+                products = products.subList(0, 50);
+            }
+        }
         return products.stream().map(this::convertToVO).collect(Collectors.toList());
     }
 
