@@ -22,7 +22,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     @Override
     public PageResult<Warehouse> getList(String keyword, Integer status, Integer pageNum, Integer pageSize) {
-        PageRequest pageRequest = PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+        PageRequest pageRequest = PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.DESC, "createTime"));
         Page<Warehouse> page = warehouseRepository.search(keyword, status, pageRequest);
 
         return PageResult.of(page.getContent(), page.getTotalElements(), pageNum, pageSize);
