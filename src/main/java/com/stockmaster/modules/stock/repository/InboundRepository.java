@@ -43,4 +43,9 @@ public interface InboundRepository extends JpaRepository<Inbound, Long> {
            "WHERE i.deleted = false AND i.createTime BETWEEN :startTime AND :endTime " +
            "GROUP BY FUNCTION('DATE', i.createTime) ORDER BY FUNCTION('DATE', i.createTime)")
     List<Object[]> getDailyStats(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+
+    @Query("SELECT COUNT(i) FROM Inbound i WHERE i.inboundNo LIKE :prefix%")
+    Long countByInboundNoPrefix(@Param("prefix") String prefix);
+
+    boolean existsByInboundNo(String inboundNo);
 }

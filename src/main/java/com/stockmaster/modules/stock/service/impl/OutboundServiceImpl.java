@@ -187,7 +187,22 @@ public class OutboundServiceImpl implements OutboundService {
     public String generateOutboundNo() {
         String prefix = "OUT";
         String dateStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        Long count = outboundRepository.count();
-        return prefix + dateStr + String.format("%06d", count + 1);
+        String fullPrefix = prefix + dateStr;
+        
+        // 查询当天已有的出库单数量
+        Long count = outboundRepository.countByOutboundNoPrefix(fullPrefix);
+        if (count == null) {
+            count = 0L;
+        }
+        
+        // 生成单号并确保唯一性
+        String outboundNo;
+        int seq = count.intValue() + 1;
+        do {
+            outboundNo = fullPrefix + String.format("%06d", seq);
+            seq++;
+        } while (outboundRepository.existsByOutboundNo(outboundNo));
+        
+        return outboundNo;
     }
 }

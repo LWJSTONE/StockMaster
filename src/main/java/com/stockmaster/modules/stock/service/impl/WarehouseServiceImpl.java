@@ -93,7 +93,8 @@ public class WarehouseServiceImpl implements WarehouseService {
     @Transactional
     public void delete(Long id) {
         Warehouse warehouse = getById(id);
-        warehouseRepository.delete(warehouse);
+        warehouse.setDeleted(true);
+        warehouseRepository.save(warehouse);
     }
 
     @Override

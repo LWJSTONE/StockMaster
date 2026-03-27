@@ -121,6 +121,21 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User createUser(UserDTO userDTO) {
+        // 检查用户名是否为空
+        if (userDTO.getUsername() == null || userDTO.getUsername().trim().isEmpty()) {
+            throw new BusinessException("用户名不能为空");
+        }
+        
+        // 检查密码是否为空
+        if (userDTO.getPassword() == null || userDTO.getPassword().trim().isEmpty()) {
+            throw new BusinessException("密码不能为空");
+        }
+        
+        // 检查真实姓名是否为空
+        if (userDTO.getRealName() == null || userDTO.getRealName().trim().isEmpty()) {
+            throw new BusinessException("真实姓名不能为空");
+        }
+        
         // 检查用户名是否存在
         if (userRepository.existsByUsername(userDTO.getUsername())) {
             throw new BusinessException("用户名已存在");

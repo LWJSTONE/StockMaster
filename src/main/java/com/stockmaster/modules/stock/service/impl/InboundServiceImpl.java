@@ -189,7 +189,22 @@ public class InboundServiceImpl implements InboundService {
     public String generateInboundNo() {
         String prefix = "IN";
         String dateStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        Long count = inboundRepository.count();
-        return prefix + dateStr + String.format("%06d", count + 1);
+        String fullPrefix = prefix + dateStr;
+        
+        // 查询当天已有的入库单数量
+        Long count = inboundRepository.countByInboundNoPrefix(fullPrefix);
+        if (count == null) {
+            count = 0L;
+        }
+        
+        // 生成单号并确保唯一性
+        String inboundNo;
+        int seq = count.intValue() + 1;
+        do {
+            inboundNo = fullPrefix + String.format("%06d", seq);
+            seq++;
+        } while (inboundRepository.existsByInboundNo(inboundNo));
+        
+        return inboundNo;
     }
 }

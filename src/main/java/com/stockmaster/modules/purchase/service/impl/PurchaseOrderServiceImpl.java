@@ -18,6 +18,7 @@ import com.stockmaster.modules.stock.entity.Product;
 import com.stockmaster.modules.stock.repository.InboundRepository;
 import com.stockmaster.modules.stock.repository.InventoryRepository;
 import com.stockmaster.modules.stock.repository.ProductRepository;
+import com.stockmaster.modules.stock.service.InboundService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -43,6 +44,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private final ProductRepository productRepository;
     private final InboundRepository inboundRepository;
     private final InventoryRepository inventoryRepository;
+    private final InboundService inboundService;
 
     @Override
     public PurchaseOrderVO getById(Long id) {
@@ -229,11 +231,18 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         }
 
         List<PurchaseOrderItem> items = purchaseOrderItemRepository.findByOrderId(id);
+        if (items == null || items.isEmpty()) {
+            throw new BusinessException("订单明细为空，无法收货");
+        }
+        
         boolean allReceived = true;
 
         for (PurchaseOrderItem item : items) {
-            if (itemIds.contains(item.getId())) {
-                // 累加收货数量而不是直接设置
+            // 如果itemIds为null或空，则收货所有待收货的项目；否则只收货指定的项目
+            boolean shouldReceive = itemIds == null || itemIds.isEmpty() || itemIds.contains(item.getId());
+            
+            if (shouldReceive && item.getReceivedQuantity() < item.getQuantity()) {
+                // 计算本次收货数量（收货剩余未收货的数量）
                 int receiveQty = item.getQuantity() - item.getReceivedQuantity();
                 if (receiveQty > 0) {
                     item.setReceivedQuantity(item.getReceivedQuantity() + receiveQty);
@@ -242,6 +251,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                     createInboundRecord(order, item, receiveQty);
                 }
             }
+            
             if (item.getReceivedQuantity() < item.getQuantity()) {
                 allReceived = false;
             }
@@ -258,7 +268,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private void createInboundRecord(PurchaseOrder order, PurchaseOrderItem item, int quantity) {
         // 创建入库记录
         Inbound inbound = new Inbound();
-        inbound.setInboundNo(generateInboundNo());
+        inbound.setInboundNo(inboundService.generateInboundNo());
         inbound.setProductId(item.getProductId());
         inbound.setQuantity(quantity);
         inbound.setUnitPrice(item.getUnitPrice());

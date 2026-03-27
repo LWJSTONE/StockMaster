@@ -39,4 +39,9 @@ public interface OutboundRepository extends JpaRepository<Outbound, Long> {
            "WHERE o.deleted = false AND o.createTime BETWEEN :startTime AND :endTime " +
            "GROUP BY FUNCTION('DATE', o.createTime) ORDER BY FUNCTION('DATE', o.createTime)")
     List<Object[]> getDailyStats(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+
+    @Query("SELECT COUNT(o) FROM Outbound o WHERE o.outboundNo LIKE :prefix%")
+    Long countByOutboundNoPrefix(@Param("prefix") String prefix);
+
+    boolean existsByOutboundNo(String outboundNo);
 }
