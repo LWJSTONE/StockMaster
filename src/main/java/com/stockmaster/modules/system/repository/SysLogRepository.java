@@ -15,13 +15,15 @@ import java.util.List;
 public interface SysLogRepository extends JpaRepository<SysLog, Long> {
 
     @Query("SELECT s FROM SysLog s WHERE " +
-            "(:keyword IS NULL OR s.username LIKE %:keyword% OR s.module LIKE %:keyword% OR s.description LIKE %:keyword%) AND " +
             "(:operationType IS NULL OR s.operationType = :operationType) AND " +
+            "(:module IS NULL OR s.module LIKE %:module%) AND " +
+            "(:keyword IS NULL OR s.username LIKE %:keyword% OR s.description LIKE %:keyword%) AND " +
             "(:status IS NULL OR s.status = :status) AND " +
             "(:startTime IS NULL OR s.createTime >= :startTime) AND " +
             "(:endTime IS NULL OR s.createTime <= :endTime)")
-    Page<SysLog> findByConditions(@Param("keyword") String keyword,
-                                   @Param("operationType") String operationType,
+    Page<SysLog> findByConditions(@Param("operationType") String operationType,
+                                   @Param("module") String module,
+                                   @Param("keyword") String keyword,
                                    @Param("status") Integer status,
                                    @Param("startTime") LocalDateTime startTime,
                                    @Param("endTime") LocalDateTime endTime,

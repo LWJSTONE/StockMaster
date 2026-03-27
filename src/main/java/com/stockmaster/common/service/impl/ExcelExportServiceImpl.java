@@ -189,7 +189,7 @@ public class ExcelExportServiceImpl implements ExportService {
     private void setResponseHeaders(HttpServletResponse response, String fileName, String contentType) throws IOException {
         response.setContentType(contentType);
         response.setCharacterEncoding("UTF-8");
-        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
+        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8.name()).replaceAll("\\+", "%20");
         response.setHeader("Content-Disposition", "attachment; filename=\"" + encodedFileName + "\"; filename*=UTF-8''" + encodedFileName);
         response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         response.setHeader("Pragma", "no-cache");

@@ -30,4 +30,7 @@ public interface SupplierRepository extends JpaRepository<Supplier, Long> {
 
     @Query("SELECT s FROM Supplier s WHERE s.deleted = false ORDER BY s.createTime DESC")
     List<Supplier> findAllOrderByCreateTime();
+
+    @Query("SELECT COUNT(s) FROM Supplier s WHERE s.deleted = false AND s.status = 1")
+    Long countActiveSuppliers();
 }

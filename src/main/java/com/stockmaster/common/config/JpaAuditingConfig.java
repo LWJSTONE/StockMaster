@@ -14,6 +14,9 @@ public class JpaAuditingConfig {
 
     @Bean
     public AuditorAware<String> auditorProvider() {
-        return () -> Optional.ofNullable(SecurityUtils.getCurrentUsername()).orElse("system");
+        return () -> {
+            String username = SecurityUtils.getCurrentUsername();
+            return Optional.of(username != null ? username : "system");
+        };
     }
 }

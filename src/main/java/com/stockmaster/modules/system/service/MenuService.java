@@ -9,19 +9,64 @@ import java.util.List;
 
 public interface MenuService {
 
-    Menu getById(Long id);
+    /**
+     * 根据ID获取菜单详情
+     * @param id 菜单ID
+     * @return 菜单DTO
+     */
+    MenuDTO getById(Long id);
 
+    /**
+     * 获取菜单树
+     * @return 菜单树列表
+     */
     List<MenuTreeVO> getMenuTree();
 
+    /**
+     * 获取所有菜单列表
+     * @return 菜单DTO列表
+     */
     List<MenuDTO> getAllMenus();
 
-    List<MenuDTO> getUserMenus(Long userId);
+    /**
+     * 获取用户菜单
+     * @param userId 用户ID
+     * @return 用户菜单树
+     */
+    List<MenuTreeVO> getUserMenus(Long userId);
 
-    Menu create(MenuDTO menuDTO);
+    /**
+     * 创建菜单
+     * @param menuDTO 菜单DTO
+     * @return 创建后的菜单DTO
+     */
+    MenuDTO create(MenuDTO menuDTO);
 
-    Menu update(Long id, MenuDTO menuDTO);
+    /**
+     * 更新菜单
+     * @param id 菜单ID
+     * @param menuDTO 菜单DTO
+     * @return 更新后的菜单DTO
+     */
+    MenuDTO update(Long id, MenuDTO menuDTO);
 
+    /**
+     * 删除菜单
+     * @param id 菜单ID
+     */
     void delete(Long id);
 
+    /**
+     * 更新菜单状态
+     * @param id 菜单ID
+     * @param status 状态
+     */
     void updateStatus(Long id, Integer status);
+
+    /**
+     * 获取用户权限列表
+     * @param userId 用户ID
+     * @return 权限标识列表
+     */
+    List<String> getUserPermissions(Long userId);
 }

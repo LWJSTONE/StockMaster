@@ -1,20 +1,30 @@
 package com.stockmaster.modules.dashboard.service;
 
+import com.stockmaster.modules.dashboard.dto.AlertItem;
+import com.stockmaster.modules.dashboard.dto.ChartData;
 import com.stockmaster.modules.dashboard.dto.DashboardStats;
+import com.stockmaster.modules.dashboard.dto.InventorySummary;
+import com.stockmaster.modules.dashboard.dto.PurchaseSummary;
+import com.stockmaster.modules.dashboard.dto.SalesSummary;
+import com.stockmaster.modules.dashboard.dto.TrendData;
+
+import java.util.List;
 
 public interface DashboardService {
 
-    DashboardStats getDashboardStats();
+    DashboardStats getStats();
 
-    DashboardStats.SalesSummary getSalesSummary();
+    SalesSummary getSalesSummary();
 
-    DashboardStats.InventorySummary getInventorySummary();
+    InventorySummary getInventorySummary();
 
-    DashboardStats.PurchaseSummary getPurchaseSummary();
+    PurchaseSummary getPurchaseSummary();
 
-    java.util.List<DashboardStats.TrendData> getSalesTrend(String startDate, String endDate);
+    List<TrendData> getPurchaseTrend(Integer days);
 
-    java.util.List<DashboardStats.ChartData> getCategoryDistribution();
+    List<ChartData> getCategoryDistribution();
 
-    java.util.List<DashboardStats.AlertItem> getAlerts();
+    List<ChartData> getPurchaseVsStock();
+
+    List<AlertItem> getAlertList();
 }

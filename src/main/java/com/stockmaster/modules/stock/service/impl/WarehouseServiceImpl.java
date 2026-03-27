@@ -41,6 +41,11 @@ public class WarehouseServiceImpl implements WarehouseService {
     }
 
     @Override
+    public List<Warehouse> getAll() {
+        return warehouseRepository.findAllOrderByCreateTime();
+    }
+
+    @Override
     public List<Warehouse> getAllActive() {
         return warehouseRepository.findAllActive();
     }

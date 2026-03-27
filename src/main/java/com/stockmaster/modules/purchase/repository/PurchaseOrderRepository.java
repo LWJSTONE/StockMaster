@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,4 +33,13 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Lo
 
     @Query("SELECT p FROM PurchaseOrder p WHERE p.deleted = false ORDER BY p.createTime DESC")
     List<PurchaseOrder> findAllOrderByCreateTime();
+
+    @Query("SELECT COUNT(p) FROM PurchaseOrder p WHERE p.deleted = false AND p.createTime BETWEEN :startTime AND :endTime")
+    Long countByTimeBetween(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+
+    @Query("SELECT SUM(p.totalAmount) FROM PurchaseOrder p WHERE p.deleted = false AND p.createTime BETWEEN :startTime AND :endTime")
+    Double sumAmountBetween(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+
+    @Query("SELECT COUNT(p) FROM PurchaseOrder p WHERE p.deleted = false AND p.status = :status")
+    Long countByStatus(@Param("status") OrderStatus status);
 }

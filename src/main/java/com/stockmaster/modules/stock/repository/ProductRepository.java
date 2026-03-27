@@ -39,4 +39,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("SELECT p FROM Product p WHERE p.deleted = false ORDER BY p.createTime DESC")
     List<Product> findAllOrderByCreateTime();
+
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.deleted = false AND p.status = 'ACTIVE'")
+    Long countActiveProducts();
 }
