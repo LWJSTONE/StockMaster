@@ -1,0 +1,170 @@
+package com.stockmaster.modules.stock.service.impl;
+
+import com.stockmaster.common.dto.PageResult;
+import com.stockmaster.common.exception.BusinessException;
+import com.stockmaster.modules.stock.dto.OutboundDTO;
+import com.stockmaster.modules.stock.entity.Inventory;
+import com.stockmaster.modules.stock.entity.Outbound;
+import com.stockmaster.modules.stock.entity.Product;
+import com.stockmaster.modules.stock.repository.InventoryRepository;
+import com.stockmaster.modules.stock.repository.OutboundRepository;
+import com.stockmaster.modules.stock.repository.ProductRepository;
+import com.stockmaster.modules.stock.service.OutboundService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class OutboundServiceImpl implements OutboundService {
+
+    private final OutboundRepository outboundRepository;
+    private final ProductRepository productRepository;
+    private final InventoryRepository inventoryRepository;
+
+    @Override
+    public Outbound getById(Long id) {
+        return outboundRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("出库记录不存在"));
+    }
+
+    @Override
+    @Transactional
+    public Outbound create(OutboundDTO outboundDTO) {
+        // 校验出库数量必须大于0
+        if (outboundDTO.getQuantity() == null || outboundDTO.getQuantity() <= 0) {
+            throw new BusinessException("出库数量必须大于0");
+        }
+        
+        Product product = productRepository.findById(outboundDTO.getProductId())
+                .orElseThrow(() -> new BusinessException("商品不存在"));
+
+        Inventory inventory = inventoryRepository.findByProductId(outboundDTO.getProductId())
+                .orElseThrow(() -> new BusinessException("库存记录不存在"));
+
+        if (inventory.getAvailableQuantity() < outboundDTO.getQuantity()) {
+            throw new BusinessException("库存不足，当前可用库存：" + inventory.getAvailableQuantity());
+        }
+
+        Outbound outbound = new Outbound();
+        outbound.setOutboundNo(generateOutboundNo());
+        outbound.setProductId(outboundDTO.getProductId());
+        outbound.setQuantity(outboundDTO.getQuantity());
+        outbound.setUnitPrice(outboundDTO.getUnitPrice() != null ? outboundDTO.getUnitPrice() : product.getSalePrice());
+        outbound.setTotalPrice(outbound.getUnitPrice().multiply(BigDecimal.valueOf(outboundDTO.getQuantity())));
+        outbound.setWarehouseCode(outboundDTO.getWarehouseCode());
+        outbound.setBatchNo(outboundDTO.getBatchNo());
+        outbound.setOutboundType(outboundDTO.getOutboundType());
+        outbound.setOutboundTime(LocalDateTime.now());
+        outbound.setStatus(1);
+
+        outbound = outboundRepository.save(outbound);
+
+        // 更新库存
+        inventory.setQuantity(inventory.getQuantity() - outboundDTO.getQuantity());
+        inventory.setAvailableQuantity(inventory.getAvailableQuantity() - outboundDTO.getQuantity());
+        inventoryRepository.save(inventory);
+
+        return outbound;
+    }
+
+    @Override
+    @Transactional
+    public Outbound update(Long id, OutboundDTO outboundDTO) {
+        // 校验出库数量必须大于0
+        if (outboundDTO.getQuantity() == null || outboundDTO.getQuantity() <= 0) {
+            throw new BusinessException("出库数量必须大于0");
+        }
+        
+        Outbound outbound = outboundRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("出库记录不存在"));
+
+        if (outbound.getStatus() != 1) {
+            throw new BusinessException("只能修改待处理的出库记录");
+        }
+
+        Inventory inventory = inventoryRepository.findByProductId(outbound.getProductId())
+                .orElseThrow(() -> new BusinessException("库存记录不存在"));
+
+        int oldQuantity = outbound.getQuantity();
+        int newQuantity = outboundDTO.getQuantity();
+        int diff = newQuantity - oldQuantity;
+
+        if (diff > 0 && inventory.getAvailableQuantity() < diff) {
+            throw new BusinessException("库存不足，当前可用库存：" + inventory.getAvailableQuantity());
+        }
+
+        Product product = productRepository.findById(outboundDTO.getProductId())
+                .orElseThrow(() -> new BusinessException("商品不存在"));
+
+        outbound.setProductId(outboundDTO.getProductId());
+        outbound.setQuantity(newQuantity);
+        outbound.setUnitPrice(outboundDTO.getUnitPrice() != null ? outboundDTO.getUnitPrice() : product.getSalePrice());
+        outbound.setTotalPrice(outbound.getUnitPrice().multiply(BigDecimal.valueOf(newQuantity)));
+        outbound.setWarehouseCode(outboundDTO.getWarehouseCode());
+        outbound.setBatchNo(outboundDTO.getBatchNo());
+        outbound.setOutboundType(outboundDTO.getOutboundType());
+
+        outbound = outboundRepository.save(outbound);
+
+        // 更新库存
+        inventory.setQuantity(inventory.getQuantity() - diff);
+        inventory.setAvailableQuantity(inventory.getAvailableQuantity() - diff);
+        inventoryRepository.save(inventory);
+
+        return outbound;
+    }
+
+    @Override
+    @Transactional
+    public void delete(Long id) {
+        Outbound outbound = outboundRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("出库记录不存在"));
+
+        if (outbound.getStatus() != 1) {
+            throw new BusinessException("只能删除待处理的出库记录");
+        }
+
+        // 回退库存
+        Inventory inventory = inventoryRepository.findByProductId(outbound.getProductId())
+                .orElseThrow(() -> new BusinessException("库存记录不存在"));
+        inventory.setQuantity(inventory.getQuantity() + outbound.getQuantity());
+        inventory.setAvailableQuantity(inventory.getAvailableQuantity() + outbound.getQuantity());
+        inventoryRepository.save(inventory);
+
+        outbound.setDeleted(true);
+        outboundRepository.save(outbound);
+    }
+
+    @Override
+    @Transactional
+    public void batchDelete(List<Long> ids) {
+        for (Long id : ids) {
+            delete(id);
+        }
+    }
+
+    @Override
+    public PageResult<Outbound> getList(String keyword, Long productId, Integer pageNum, Integer pageSize) {
+        Pageable pageable = PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.DESC, "createTime"));
+        Page<Outbound> page = outboundRepository.findByConditions(keyword, productId, pageable);
+        return PageResult.of(page.getContent(), page.getTotalElements(), pageNum, pageSize);
+    }
+
+    @Override
+    public String generateOutboundNo() {
+        String prefix = "OUT";
+        String dateStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        Long count = outboundRepository.count();
+        return prefix + dateStr + String.format("%06d", count + 1);
+    }
+}
