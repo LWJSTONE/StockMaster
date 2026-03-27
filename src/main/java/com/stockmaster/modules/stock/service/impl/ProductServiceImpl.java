@@ -75,10 +75,9 @@ public class ProductServiceImpl implements ProductService {
     public List<ProductVO> getLowStockProducts() {
         List<Inventory> lowStockInventories = inventoryRepository.findLowStock();
         return lowStockInventories.stream()
-                .filter(inv -> !Boolean.TRUE.equals(inv.getDeleted()))
                 .map(inv -> {
                     Product product = productRepository.findById(inv.getProductId()).orElse(null);
-                    if (product != null) {
+                    if (product != null && !Boolean.TRUE.equals(product.getDeleted())) {
                         ProductVO vo = convertToVO(product);
                         vo.setInventoryQuantity(inv.getQuantity());
                         return vo;

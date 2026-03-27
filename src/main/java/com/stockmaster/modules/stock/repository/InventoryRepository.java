@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,7 +20,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
     List<Inventory> findByWarehouseCode(String warehouseCode);
 
-    @Query("SELECT i FROM Inventory i WHERE i.deleted = false AND (:keyword IS NULL OR i.product.productName LIKE %:keyword% OR i.product.productCode LIKE %:keyword%)")
+    @Query("SELECT i FROM Inventory i JOIN Product p ON i.productId = p.id WHERE i.deleted = false AND (:keyword IS NULL OR p.productName LIKE %:keyword% OR p.productCode LIKE %:keyword%)")
     Page<Inventory> findByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
     @Query("SELECT i FROM Inventory i WHERE i.deleted = false AND i.warningMin IS NOT NULL AND i.quantity <= i.warningMin")
@@ -41,4 +42,10 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
     @Query("SELECT COUNT(i) FROM Inventory i WHERE i.deleted = false AND i.warningMin IS NOT NULL AND i.quantity <= i.warningMin")
     Long countLowStockProducts();
+
+    @Query("SELECT i FROM Inventory i WHERE i.deleted = false")
+    List<Inventory> findAllNotDeleted();
+
+    @Query("SELECT SUM(i.quantity * p.costPrice) FROM Inventory i JOIN Product p ON i.productId = p.id WHERE i.deleted = false AND i.quantity > 0")
+    BigDecimal getTotalInventoryValue();
 }

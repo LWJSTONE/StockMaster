@@ -23,7 +23,7 @@ public class SupplierEvaluationController {
     @GetMapping
     @LogOperation(value = OperationType.QUERY, module = "供应商评价", description = "查询评价列表")
     public ApiResponse<PageResult<SupplierEvaluation>> getList(
-            @RequestParam Long supplierId,
+            @RequestParam(required = false) Long supplierId,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize) {
         PageResult<SupplierEvaluation> result = evaluationService.getList(supplierId, pageNum, pageSize);

@@ -72,19 +72,8 @@ public class DashboardServiceImpl implements DashboardService {
         stats.setTodayOutboundCount(todayOutboundCount != null ? todayOutboundCount : 0L);
 
         // 计算库存总价值
-        BigDecimal totalInventoryValue = BigDecimal.ZERO;
-        List<Inventory> allInventory = inventoryRepository.findAll();
-        for (Inventory inv : allInventory) {
-            if (inv.getQuantity() != null && inv.getQuantity() > 0) {
-                Optional<Product> productOpt = productRepository.findById(inv.getProductId());
-                if (productOpt.isPresent()) {
-                    Product product = productOpt.get();
-                    BigDecimal costPrice = product.getCostPrice() != null ? product.getCostPrice() : BigDecimal.ZERO;
-                    totalInventoryValue = totalInventoryValue.add(costPrice.multiply(BigDecimal.valueOf(inv.getQuantity())));
-                }
-            }
-        }
-        stats.setTotalInventoryValue(totalInventoryValue);
+        BigDecimal totalInventoryValue = inventoryRepository.getTotalInventoryValue();
+        stats.setTotalInventoryValue(totalInventoryValue != null ? totalInventoryValue : BigDecimal.ZERO);
 
         return stats;
     }
@@ -228,19 +217,8 @@ public class DashboardServiceImpl implements DashboardService {
         summary.setTotalQuantity(totalQuantity != null ? totalQuantity : 0L);
 
         // Total value calculation
-        BigDecimal totalValue = BigDecimal.ZERO;
-        List<Inventory> allInventory = inventoryRepository.findAll();
-        for (Inventory inv : allInventory) {
-            if (inv.getQuantity() != null && inv.getQuantity() > 0) {
-                Optional<Product> productOpt = productRepository.findById(inv.getProductId());
-                if (productOpt.isPresent()) {
-                    Product product = productOpt.get();
-                    BigDecimal costPrice = product.getCostPrice() != null ? product.getCostPrice() : BigDecimal.ZERO;
-                    totalValue = totalValue.add(costPrice.multiply(BigDecimal.valueOf(inv.getQuantity())));
-                }
-            }
-        }
-        summary.setTotalValue(totalValue);
+        BigDecimal totalValue = inventoryRepository.getTotalInventoryValue();
+        summary.setTotalValue(totalValue != null ? totalValue : BigDecimal.ZERO);
 
         // Low stock and overstock counts
         Long lowStockCount = inventoryRepository.countLowStockProducts();
@@ -254,7 +232,7 @@ public class DashboardServiceImpl implements DashboardService {
 
         // Average stock value
         if (productTypeCount != null && productTypeCount > 0) {
-            summary.setAvgStockValue(totalValue.divide(BigDecimal.valueOf(productTypeCount), 2, RoundingMode.HALF_UP));
+            summary.setAvgStockValue(totalValue != null ? totalValue.divide(BigDecimal.valueOf(productTypeCount), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO);
         } else {
             summary.setAvgStockValue(BigDecimal.ZERO);
         }

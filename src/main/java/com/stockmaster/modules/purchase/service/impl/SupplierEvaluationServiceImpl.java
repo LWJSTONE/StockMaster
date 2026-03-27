@@ -34,7 +34,7 @@ public class SupplierEvaluationServiceImpl implements SupplierEvaluationService 
         if (supplierId != null) {
             page = evaluationRepository.findBySupplierIdAndDeletedFalse(supplierId, pageRequest);
         } else {
-            page = evaluationRepository.findAll(pageRequest);
+            page = evaluationRepository.findAllByDeletedFalse(pageRequest);
         }
         
         return PageResult.of(page.getContent(), page.getTotalElements(), pageNum, pageSize);

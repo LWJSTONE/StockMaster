@@ -56,7 +56,7 @@ public class RoleServiceImpl implements RoleService {
         if (StringUtils.hasText(keyword)) {
             page = roleRepository.findByKeyword(keyword, pageable);
         } else {
-            page = roleRepository.findAll(pageable);
+            page = roleRepository.findAllByDeletedFalse(pageable);
         }
 
         List<RoleDTO> records = page.getContent().stream()

@@ -28,4 +28,7 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
 
     @Query("SELECT r FROM Role r WHERE r.deleted = false AND (r.roleCode LIKE %:keyword% OR r.roleName LIKE %:keyword% OR r.description LIKE %:keyword%)")
     Page<Role> findByKeyword(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query("SELECT r FROM Role r WHERE r.deleted = false ORDER BY r.sortOrder")
+    Page<Role> findAllByDeletedFalse(Pageable pageable);
 }

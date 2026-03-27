@@ -20,6 +20,9 @@ public interface SupplierEvaluationRepository extends JpaRepository<SupplierEval
     @Query("SELECT e FROM SupplierEvaluation e WHERE e.deleted = false ORDER BY e.createTime DESC")
     List<SupplierEvaluation> findAllOrderByCreateTime();
 
+    @Query("SELECT e FROM SupplierEvaluation e WHERE e.deleted = false ORDER BY e.createTime DESC")
+    Page<SupplierEvaluation> findAllByDeletedFalse(Pageable pageable);
+
     @Query("SELECT AVG(e.totalScore) FROM SupplierEvaluation e WHERE e.deleted = false AND e.supplierId = :supplierId")
     Double getAverageScoreBySupplierId(@Param("supplierId") Long supplierId);
 }

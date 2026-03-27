@@ -40,9 +40,8 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public List<InventoryDTO> getAll() {
-        List<Inventory> inventories = inventoryRepository.findAll();
+        List<Inventory> inventories = inventoryRepository.findAllNotDeleted();
         return inventories.stream()
-                .filter(inv -> !Boolean.TRUE.equals(inv.getDeleted()))
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
