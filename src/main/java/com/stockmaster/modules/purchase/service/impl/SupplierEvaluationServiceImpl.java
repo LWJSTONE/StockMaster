@@ -32,7 +32,7 @@ public class SupplierEvaluationServiceImpl implements SupplierEvaluationService 
         
         Page<SupplierEvaluation> page;
         if (supplierId != null) {
-            page = evaluationRepository.findBySupplierId(supplierId, pageRequest);
+            page = evaluationRepository.findBySupplierIdAndDeletedFalse(supplierId, pageRequest);
         } else {
             page = evaluationRepository.findAll(pageRequest);
         }
@@ -48,7 +48,7 @@ public class SupplierEvaluationServiceImpl implements SupplierEvaluationService 
 
     @Override
     public List<SupplierEvaluation> getBySupplierId(Long supplierId) {
-        return evaluationRepository.findBySupplierId(supplierId);
+        return evaluationRepository.findBySupplierIdAndDeletedFalse(supplierId);
     }
 
     @Override

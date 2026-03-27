@@ -92,21 +92,50 @@ public class OutboundServiceImpl implements OutboundService {
             throw new BusinessException("只能修改待处理的出库记录");
         }
 
-        Inventory inventory = inventoryRepository.findByProductId(outbound.getProductId())
-                .orElseThrow(() -> new BusinessException("库存记录不存在"));
-
+        Long oldProductId = outbound.getProductId();
+        Long newProductId = outboundDTO.getProductId();
         int oldQuantity = outbound.getQuantity();
         int newQuantity = outboundDTO.getQuantity();
-        int diff = newQuantity - oldQuantity;
 
-        if (diff > 0 && inventory.getAvailableQuantity() < diff) {
-            throw new BusinessException("库存不足，当前可用库存：" + inventory.getAvailableQuantity());
+        // 处理库存更新
+        if (!oldProductId.equals(newProductId)) {
+            // 产品ID改变了，需要回退原产品库存并扣减新产品库存
+            Inventory oldInventory = inventoryRepository.findByProductId(oldProductId)
+                    .orElseThrow(() -> new BusinessException("原产品库存记录不存在"));
+            oldInventory.setQuantity(oldInventory.getQuantity() + oldQuantity);
+            oldInventory.setAvailableQuantity(oldInventory.getAvailableQuantity() + oldQuantity);
+            inventoryRepository.save(oldInventory);
+
+            Inventory newInventory = inventoryRepository.findByProductId(newProductId)
+                    .orElseThrow(() -> new BusinessException("新产品库存记录不存在"));
+            
+            if (newInventory.getAvailableQuantity() < newQuantity) {
+                throw new BusinessException("新产品库存不足，当前可用库存：" + newInventory.getAvailableQuantity());
+            }
+            newInventory.setQuantity(newInventory.getQuantity() - newQuantity);
+            newInventory.setAvailableQuantity(newInventory.getAvailableQuantity() - newQuantity);
+            inventoryRepository.save(newInventory);
+        } else {
+            // 产品ID未变，只更新数量差异
+            Inventory inventory = inventoryRepository.findByProductId(newProductId)
+                    .orElseThrow(() -> new BusinessException("库存记录不存在"));
+            
+            int diff = newQuantity - oldQuantity;
+            if (diff > 0 && inventory.getAvailableQuantity() < diff) {
+                throw new BusinessException("库存不足，当前可用库存：" + inventory.getAvailableQuantity());
+            }
+            
+            if (diff != 0) {
+                inventory.setQuantity(inventory.getQuantity() - diff);
+                inventory.setAvailableQuantity(inventory.getAvailableQuantity() - diff);
+                inventoryRepository.save(inventory);
+            }
         }
 
-        Product product = productRepository.findById(outboundDTO.getProductId())
+        Product product = productRepository.findById(newProductId)
                 .orElseThrow(() -> new BusinessException("商品不存在"));
 
-        outbound.setProductId(outboundDTO.getProductId());
+        outbound.setProductId(newProductId);
         outbound.setQuantity(newQuantity);
         outbound.setUnitPrice(outboundDTO.getUnitPrice() != null ? outboundDTO.getUnitPrice() : product.getSalePrice());
         outbound.setTotalPrice(outbound.getUnitPrice().multiply(BigDecimal.valueOf(newQuantity)));
@@ -115,12 +144,6 @@ public class OutboundServiceImpl implements OutboundService {
         outbound.setOutboundType(outboundDTO.getOutboundType());
 
         outbound = outboundRepository.save(outbound);
-
-        // 更新库存
-        inventory.setQuantity(inventory.getQuantity() - diff);
-        inventory.setAvailableQuantity(inventory.getAvailableQuantity() - diff);
-        inventoryRepository.save(inventory);
-
         return outbound;
     }
 

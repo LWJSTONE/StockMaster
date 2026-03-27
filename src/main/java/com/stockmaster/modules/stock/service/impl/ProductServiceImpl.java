@@ -65,7 +65,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductVO> getActiveProducts() {
-        List<Product> products = productRepository.findAllActive();
+        List<Product> products = productRepository.findAllActive(StockStatus.ACTIVE);
         return products.stream()
                 .map(this::convertToVO)
                 .collect(Collectors.toList());

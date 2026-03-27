@@ -99,8 +99,43 @@ public class InboundServiceImpl implements InboundService {
         Product product = productRepository.findById(inboundDTO.getProductId())
                 .orElseThrow(() -> new BusinessException("商品不存在"));
 
+        Long oldProductId = inbound.getProductId();
+        Long newProductId = inboundDTO.getProductId();
         int oldQuantity = inbound.getQuantity();
         int newQuantity = inboundDTO.getQuantity();
+
+        // 处理库存更新
+        if (!oldProductId.equals(newProductId)) {
+            // 产品ID改变了，需要回退原产品库存并增加新产品库存
+            Inventory oldInventory = inventoryRepository.findByProductId(oldProductId)
+                    .orElseThrow(() -> new BusinessException("原产品库存记录不存在"));
+            oldInventory.setQuantity(oldInventory.getQuantity() - oldQuantity);
+            oldInventory.setAvailableQuantity(oldInventory.getAvailableQuantity() - oldQuantity);
+            inventoryRepository.save(oldInventory);
+
+            Inventory newInventory = inventoryRepository.findByProductId(newProductId)
+                    .orElseGet(() -> {
+                        Inventory inv = new Inventory();
+                        inv.setProductId(newProductId);
+                        inv.setQuantity(0);
+                        inv.setFrozenQuantity(0);
+                        inv.setAvailableQuantity(0);
+                        return inv;
+                    });
+            newInventory.setQuantity(newInventory.getQuantity() + newQuantity);
+            newInventory.setAvailableQuantity(newInventory.getAvailableQuantity() + newQuantity);
+            inventoryRepository.save(newInventory);
+        } else {
+            // 产品ID未变，只更新数量差异
+            int diff = newQuantity - oldQuantity;
+            if (diff != 0) {
+                Inventory inventory = inventoryRepository.findByProductId(newProductId)
+                        .orElseThrow(() -> new BusinessException("库存记录不存在"));
+                inventory.setQuantity(inventory.getQuantity() + diff);
+                inventory.setAvailableQuantity(inventory.getAvailableQuantity() + diff);
+                inventoryRepository.save(inventory);
+            }
+        }
 
         inbound.setProductId(inboundDTO.getProductId());
         inbound.setQuantity(newQuantity);
@@ -111,17 +146,6 @@ public class InboundServiceImpl implements InboundService {
         inbound.setBatchNo(inboundDTO.getBatchNo());
 
         inbound = inboundRepository.save(inbound);
-
-        // 更新库存
-        int diff = newQuantity - oldQuantity;
-        if (diff != 0) {
-            Inventory inventory = inventoryRepository.findByProductId(inboundDTO.getProductId())
-                    .orElseThrow(() -> new BusinessException("库存记录不存在"));
-            inventory.setQuantity(inventory.getQuantity() + diff);
-            inventory.setAvailableQuantity(inventory.getAvailableQuantity() + diff);
-            inventoryRepository.save(inventory);
-        }
-
         return inbound;
     }
 

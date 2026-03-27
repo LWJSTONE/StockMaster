@@ -34,12 +34,12 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                                     @Param("status") StockStatus status,
                                     Pageable pageable);
 
-    @Query("SELECT p FROM Product p WHERE p.deleted = false AND p.status = 'ACTIVE'")
-    List<Product> findAllActive();
+    @Query("SELECT p FROM Product p WHERE p.deleted = false AND p.status = :status")
+    List<Product> findAllActive(@Param("status") StockStatus status);
 
     @Query("SELECT p FROM Product p WHERE p.deleted = false ORDER BY p.createTime DESC")
     List<Product> findAllOrderByCreateTime();
 
-    @Query("SELECT COUNT(p) FROM Product p WHERE p.deleted = false AND p.status = 'ACTIVE'")
-    Long countActiveProducts();
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.deleted = false AND p.status = :status")
+    Long countActiveProducts(@Param("status") StockStatus status);
 }

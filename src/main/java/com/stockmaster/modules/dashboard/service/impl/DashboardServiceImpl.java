@@ -1,6 +1,7 @@
 package com.stockmaster.modules.dashboard.service.impl;
 
 import com.stockmaster.common.enums.OrderStatus;
+import com.stockmaster.common.enums.StockStatus;
 import com.stockmaster.modules.dashboard.dto.*;
 import com.stockmaster.modules.dashboard.service.DashboardService;
 import com.stockmaster.modules.purchase.repository.PurchaseOrderRepository;
@@ -43,7 +44,7 @@ public class DashboardServiceImpl implements DashboardService {
     public DashboardStats getStats() {
         DashboardStats stats = new DashboardStats();
 
-        stats.setProductCount(productRepository.countActiveProducts());
+        stats.setProductCount(productRepository.countActiveProducts(StockStatus.ACTIVE));
         stats.setSupplierCount(supplierRepository.countActiveSuppliers());
         stats.setPurchaseOrderCount(purchaseOrderRepository.count());
 
@@ -248,7 +249,7 @@ public class DashboardServiceImpl implements DashboardService {
         summary.setOverStockCount((long) overstockList.size());
 
         // Product type count
-        Long productTypeCount = productRepository.countActiveProducts();
+        Long productTypeCount = productRepository.countActiveProducts(StockStatus.ACTIVE);
         summary.setProductTypeCount(productTypeCount != null ? productTypeCount : 0L);
 
         // Average stock value

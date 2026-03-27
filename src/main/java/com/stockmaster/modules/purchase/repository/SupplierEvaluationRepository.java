@@ -13,9 +13,9 @@ import java.util.List;
 @Repository
 public interface SupplierEvaluationRepository extends JpaRepository<SupplierEvaluation, Long> {
 
-    Page<SupplierEvaluation> findBySupplierId(Long supplierId, Pageable pageable);
+    Page<SupplierEvaluation> findBySupplierIdAndDeletedFalse(Long supplierId, Pageable pageable);
 
-    List<SupplierEvaluation> findBySupplierId(Long supplierId);
+    List<SupplierEvaluation> findBySupplierIdAndDeletedFalse(Long supplierId);
 
     @Query("SELECT e FROM SupplierEvaluation e WHERE e.deleted = false ORDER BY e.createTime DESC")
     List<SupplierEvaluation> findAllOrderByCreateTime();

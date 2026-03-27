@@ -12,7 +12,11 @@ import com.stockmaster.modules.purchase.repository.PurchaseOrderItemRepository;
 import com.stockmaster.modules.purchase.repository.PurchaseOrderRepository;
 import com.stockmaster.modules.purchase.repository.SupplierRepository;
 import com.stockmaster.modules.purchase.service.PurchaseOrderService;
+import com.stockmaster.modules.stock.entity.Inbound;
+import com.stockmaster.modules.stock.entity.Inventory;
 import com.stockmaster.modules.stock.entity.Product;
+import com.stockmaster.modules.stock.repository.InboundRepository;
+import com.stockmaster.modules.stock.repository.InventoryRepository;
 import com.stockmaster.modules.stock.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -37,6 +41,8 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private final PurchaseOrderItemRepository purchaseOrderItemRepository;
     private final SupplierRepository supplierRepository;
     private final ProductRepository productRepository;
+    private final InboundRepository inboundRepository;
+    private final InventoryRepository inventoryRepository;
 
     @Override
     public PurchaseOrderVO getById(Long id) {
@@ -227,7 +233,14 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
         for (PurchaseOrderItem item : items) {
             if (itemIds.contains(item.getId())) {
-                item.setReceivedQuantity(item.getQuantity());
+                // 累加收货数量而不是直接设置
+                int receiveQty = item.getQuantity() - item.getReceivedQuantity();
+                if (receiveQty > 0) {
+                    item.setReceivedQuantity(item.getReceivedQuantity() + receiveQty);
+                    
+                    // 创建入库记录并更新库存
+                    createInboundRecord(order, item, receiveQty);
+                }
             }
             if (item.getReceivedQuantity() < item.getQuantity()) {
                 allReceived = false;
@@ -240,6 +253,34 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             order.setStatus(OrderStatus.COMPLETED);
             purchaseOrderRepository.save(order);
         }
+    }
+
+    private void createInboundRecord(PurchaseOrder order, PurchaseOrderItem item, int quantity) {
+        // 创建入库记录
+        Inbound inbound = new Inbound();
+        inbound.setInboundNo(generateInboundNo());
+        inbound.setProductId(item.getProductId());
+        inbound.setQuantity(quantity);
+        inbound.setUnitPrice(item.getUnitPrice());
+        inbound.setTotalPrice(item.getUnitPrice().multiply(BigDecimal.valueOf(quantity)));
+        inbound.setSupplierId(order.getSupplierId());
+        inbound.setInboundTime(LocalDateTime.now());
+        inbound.setStatus(1);
+        inboundRepository.save(inbound);
+
+        // 更新库存
+        Inventory inventory = inventoryRepository.findByProductId(item.getProductId())
+                .orElseGet(() -> {
+                    Inventory inv = new Inventory();
+                    inv.setProductId(item.getProductId());
+                    inv.setQuantity(0);
+                    inv.setFrozenQuantity(0);
+                    inv.setAvailableQuantity(0);
+                    return inv;
+                });
+        inventory.setQuantity(inventory.getQuantity() + quantity);
+        inventory.setAvailableQuantity(inventory.getAvailableQuantity() + quantity);
+        inventoryRepository.save(inventory);
     }
 
     private String generateOrderNo() {
