@@ -1,7 +1,6 @@
 package com.stockmaster.modules.stock.entity;
 
 import com.stockmaster.common.entity.BaseEntity;
-import com.stockmaster.common.enums.StockOperationType;
 import javax.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
